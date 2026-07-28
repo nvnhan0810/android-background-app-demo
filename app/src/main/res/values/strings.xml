@@ -14,6 +14,10 @@
     <string name="btn_schedule_work">Schedule periodic work</string>
     <string name="btn_cancel_work">Cancel periodic work</string>
     <string name="btn_test_db">Test local SQLite</string>
+    <string name="btn_battery_opt">Bỏ tối ưu pin (keep-alive)</string>
+    <string name="status_battery_unrestricted">Status: battery unrestricted OK</string>
+    <string name="status_battery_restricted">Status: mở dialog bỏ tối ưu pin…</string>
+    <string name="status_keepalive">KeepAlive: service=%1$s work=%2$s</string>
     <string name="notification_permission_denied">Notification permission denied</string>
     <string name="notification_channel_name">Background demo</string>
     <string name="notification_channel_description">Shows foreground service activity</string>

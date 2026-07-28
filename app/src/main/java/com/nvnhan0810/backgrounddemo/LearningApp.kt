@@ -7,6 +7,7 @@ import com.nvnhan0810.backgrounddemo.db.DatabaseProvider
  * Application = object sống suốt vòng đời process app.
  * Đăng ký UncaughtExceptionHandler để crash cũng hiện trên LearningLog (khi còn kịp).
  * Đồng thời mở SQLite (Room) local ngay khi app start.
+ * Nếu user đã bật keep-alive → restore service/work khi process sống lại.
  */
 class LearningApp : Application() {
 
@@ -31,6 +32,7 @@ class LearningApp : Application() {
         }
 
         openLocalDatabase()
+        KeepAliveRestorer.restore(this, reason = "LearningApp.onCreate")
     }
 
     private fun openLocalDatabase() {

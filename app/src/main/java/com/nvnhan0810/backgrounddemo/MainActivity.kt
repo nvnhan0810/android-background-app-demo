@@ -3,12 +3,20 @@ package com.nvnhan0810.backgrounddemo
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
+import android.util.TypedValue
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -44,12 +52,16 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Edge-to-edge: app vẽ dưới status/nav bar; ta tự chừa safe area bằng WindowInsets.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applySafeAreaInsets()
 
         LearningLog.addListener(logListener)
         LearningLog.i(TAG, "onCreate — UI ready, savedInstanceState=${savedInstanceState != null}")
+        refreshKeepAliveStatus()
 
         binding.btnStartService.setOnClickListener {
             LearningLog.d(TAG, "Click: Start foreground service")
@@ -71,10 +83,48 @@ class MainActivity : AppCompatActivity() {
             LearningLog.d(TAG, "Click: Test local SQLite")
             testLocalDatabase()
         }
+        binding.btnBatteryOpt.setOnClickListener {
+            LearningLog.d(TAG, "Click: Request ignore battery optimizations")
+            requestIgnoreBatteryOptimizations()
+        }
         binding.btnClearLog.setOnClickListener {
             LearningLog.clear()
             LearningLog.i(TAG, "Log cleared by user")
         }
+    }
+
+    private var loggedSafeAreaOnce = false
+
+    /**
+     * Safe area = vùng không bị status bar (trên) / navigation bar (dưới) che.
+     * Cộng thêm content padding 16dp để UI không dính sát mép.
+     */
+    private fun applySafeAreaInsets() {
+        val contentPadPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            16f,
+            resources.displayMetrics
+        ).toInt()
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(
+                left = bars.left + contentPadPx,
+                top = bars.top + contentPadPx,
+                right = bars.right + contentPadPx,
+                bottom = bars.bottom + contentPadPx
+            )
+            if (!loggedSafeAreaOnce) {
+                loggedSafeAreaOnce = true
+                LearningLog.i(
+                    TAG,
+                    "Safe area applied L=${bars.left} T=${bars.top} R=${bars.right} B=${bars.bottom} +pad=${contentPadPx}px"
+                )
+            }
+            windowInsets
+        }
+        // Yêu cầu hệ thống gửi insets ngay (một số máy không fire listener lần đầu nếu thiếu).
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     override fun onDestroy() {
@@ -115,12 +165,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun startDemoService() {
         try {
+            KeepAliveStore.setServiceEnabled(this, true)
             val intent = Intent(this, DemoForegroundService::class.java).apply {
                 action = DemoForegroundService.ACTION_START
             }
             ContextCompat.startForegroundService(this, intent)
             binding.txtStatus.setText(R.string.status_service_running)
-            LearningLog.i(TAG, "startForegroundService(ACTION_START) called")
+            LearningLog.i(TAG, "startForegroundService(ACTION_START) + keep-alive flag ON")
+            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "startDemoService failed", t)
         }
@@ -128,12 +180,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopDemoService() {
         try {
+            KeepAliveStore.setServiceEnabled(this, false)
             val intent = Intent(this, DemoForegroundService::class.java).apply {
                 action = DemoForegroundService.ACTION_STOP
             }
             startService(intent)
             binding.txtStatus.setText(R.string.status_service_stopped)
-            LearningLog.i(TAG, "startService(ACTION_STOP) called")
+            LearningLog.i(TAG, "startService(ACTION_STOP) + keep-alive flag OFF")
+            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "stopDemoService failed", t)
         }
@@ -141,6 +195,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun schedulePeriodicWork() {
         try {
+            KeepAliveStore.setWorkEnabled(this, true)
             val request = PeriodicWorkRequestBuilder<DemoWorker>(15, TimeUnit.MINUTES)
                 .build()
 
@@ -152,8 +207,9 @@ class MainActivity : AppCompatActivity() {
             binding.txtStatus.setText(R.string.status_work_scheduled)
             LearningLog.i(
                 TAG,
-                "WorkManager enqueueUniquePeriodicWork name=${DemoWorker.UNIQUE_WORK_NAME} every=15min"
+                "WorkManager enqueueUniquePeriodicWork name=${DemoWorker.UNIQUE_WORK_NAME} every=15min + flag ON"
             )
+            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "schedulePeriodicWork failed", t)
         }
@@ -161,11 +217,46 @@ class MainActivity : AppCompatActivity() {
 
     private fun cancelPeriodicWork() {
         try {
+            KeepAliveStore.setWorkEnabled(this, false)
             WorkManager.getInstance(this).cancelUniqueWork(DemoWorker.UNIQUE_WORK_NAME)
             binding.txtStatus.setText(R.string.status_work_cancelled)
-            LearningLog.i(TAG, "WorkManager cancelUniqueWork name=${DemoWorker.UNIQUE_WORK_NAME}")
+            LearningLog.i(TAG, "WorkManager cancelUniqueWork + flag OFF")
+            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "cancelPeriodicWork failed", t)
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        try {
+            val pm = getSystemService(PowerManager::class.java)
+            if (pm.isIgnoringBatteryOptimizations(packageName)) {
+                binding.txtStatus.setText(R.string.status_battery_unrestricted)
+                LearningLog.i(TAG, "Battery optimizations already ignored for $packageName")
+                return
+            }
+            binding.txtStatus.setText(R.string.status_battery_restricted)
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+            LearningLog.i(TAG, "Launched ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
+        } catch (t: Throwable) {
+            LearningLog.e(TAG, "requestIgnoreBatteryOptimizations failed", t)
+        }
+    }
+
+    private fun refreshKeepAliveStatus() {
+        val serviceOn = KeepAliveStore.isServiceEnabled(this)
+        val workOn = KeepAliveStore.isWorkEnabled(this)
+        LearningLog.i(TAG, "KeepAlive flags service=$serviceOn work=$workOn")
+        // Không ghi đè status nếu user vừa thấy message khác; chỉ log + subtitle-style khi idle
+        if (binding.txtStatus.text == getString(R.string.status_idle)) {
+            binding.txtStatus.text = getString(
+                R.string.status_keepalive,
+                if (serviceOn) "ON" else "OFF",
+                if (workOn) "ON" else "OFF"
+            )
         }
     }
 

@@ -52,10 +52,17 @@ class DemoForegroundService : Service() {
         return try {
             when (action) {
                 ACTION_STOP -> {
+                    // User chủ động tắt → không sticky restart
+                    KeepAliveStore.setServiceEnabled(this, false)
                     stopDemo()
                     START_NOT_STICKY
                 }
                 else -> {
+                    // ACTION_START hoặc intent==null (OS restart vì START_STICKY sau khi bị kill)
+                    if (action == null) {
+                        LearningLog.w(TAG, "Sticky restart (null intent) — OS đưa service sống lại sau kill")
+                    }
+                    KeepAliveStore.setServiceEnabled(this, true)
                     startDemo()
                     START_STICKY
                 }
