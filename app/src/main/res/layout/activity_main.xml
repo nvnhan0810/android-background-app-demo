@@ -81,6 +81,17 @@
         app:layout_constraintStart_toEndOf="@id/btnScheduleWork"
         app:layout_constraintTop_toTopOf="@id/btnScheduleWork" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTestDb"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/btn_test_db"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnScheduleWork" />
+
     <TextView
         android:id="@+id/txtLogTitle"
         android:layout_width="0dp"
@@ -90,7 +101,7 @@
         android:textAppearance="?attr/textAppearanceTitleSmall"
         app:layout_constraintEnd_toStartOf="@id/btnClearLog"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnScheduleWork" />
+        app:layout_constraintTop_toBottomOf="@id/btnTestDb" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnClearLog"

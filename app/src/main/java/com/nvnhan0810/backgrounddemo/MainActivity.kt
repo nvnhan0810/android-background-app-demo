@@ -13,6 +13,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.nvnhan0810.backgrounddemo.databinding.ActivityMainBinding
+import com.nvnhan0810.backgrounddemo.db.DatabaseProvider
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -65,6 +66,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnCancelWork.setOnClickListener {
             LearningLog.d(TAG, "Click: Cancel periodic work")
             cancelPeriodicWork()
+        }
+        binding.btnTestDb.setOnClickListener {
+            LearningLog.d(TAG, "Click: Test local SQLite")
+            testLocalDatabase()
         }
         binding.btnClearLog.setOnClickListener {
             LearningLog.clear()
@@ -161,6 +166,24 @@ class MainActivity : AppCompatActivity() {
             LearningLog.i(TAG, "WorkManager cancelUniqueWork name=${DemoWorker.UNIQUE_WORK_NAME}")
         } catch (t: Throwable) {
             LearningLog.e(TAG, "cancelPeriodicWork failed", t)
+        }
+    }
+
+    private fun testLocalDatabase() {
+        try {
+            val info = DatabaseProvider.openAndSmokeTest(this)
+            if (info.ok) {
+                binding.txtStatus.text = getString(
+                    R.string.status_db_ok,
+                    info.dbName,
+                    info.metaCount
+                )
+            } else {
+                binding.txtStatus.setText(R.string.status_db_fail)
+            }
+        } catch (t: Throwable) {
+            binding.txtStatus.setText(R.string.status_db_fail)
+            LearningLog.e(TAG, "testLocalDatabase failed", t)
         }
     }
 

@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Background App Demo</string>
-    <string name="app_subtitle">Foreground service and WorkManager demo</string>
+    <string name="app_subtitle">Local SQLite + background demos (learning)</string>
     <string name="status_idle">Status: idle</string>
     <string name="status_service_running">Status: foreground service running</string>
     <string name="status_service_stopped">Status: foreground service stopped</string>
     <string name="status_work_scheduled">Status: periodic WorkManager job scheduled</string>
     <string name="status_work_cancelled">Status: WorkManager job cancelled</string>
+    <string name="status_db_ok">Status: SQLite OK — %1$s (%2$d rows)</string>
+    <string name="status_db_fail">Status: SQLite FAILED — xem learning log</string>
     <string name="btn_start_service">Start foreground service</string>
     <string name="btn_stop_service">Stop foreground service</string>
     <string name="btn_schedule_work">Schedule periodic work</string>
     <string name="btn_cancel_work">Cancel periodic work</string>
+    <string name="btn_test_db">Test local SQLite</string>
     <string name="notification_permission_denied">Notification permission denied</string>
     <string name="notification_channel_name">Background demo</string>
     <string name="notification_channel_description">Shows foreground service activity</string>
