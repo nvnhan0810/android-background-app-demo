@@ -1,0 +1,49 @@
+---
+description: Mọi chỉnh sửa phải kèm giải thích khái niệm Kotlin/Android cho newbie
+alwaysApply: true
+---
+
+# Teaching mode — Kotlin Android newbie
+
+Người dùng là **newbie Kotlin / Android**. Project này dùng để học (foreground service, WorkManager, lifecycle, permissions…).
+
+## Bắt buộc với mọi thay đổi code
+
+Khi tạo / sửa / xóa bất kỳ file nào trong project, phản hồi **phải** kèm phần dạy học — không chỉ diff hay “đã sửa xong”.
+
+Mỗi lần chỉnh sửa, giải thích theo cấu trúc sau (có thể gọn nếu thay đổi nhỏ, nhưng **không được bỏ**):
+
+1. **Khái niệm** — Đây là gì? Vai trò trong Android/Kotlin?
+2. **Cách làm / vì sao làm vậy** — Vì sao chọn API/pattern này? Có lựa chọn khác không?
+3. **Kiến thức liên quan** — Lifecycle, thread, permission, Manifest, Gradle… nếu đụng tới.
+4. **Tài liệu** — Ít nhất 1 link chính thức khi đụng API/framework mới hoặc khái niệm mới:
+   - Ưu tiên: [developer.android.com](https://developer.android.com), [kotlinlang.org](https://kotlinlang.org/docs/home.html)
+   - Có thể thêm: Android Developers YouTube / Codelab nếu hữu ích
+
+## Ngôn ngữ & mức độ
+
+- Viết giải thích bằng **tiếng Việt**, thuật ngữ kỹ thuật giữ tiếng Anh kèm nghĩa ngắn (vd: *Foreground Service* = dịch vụ chạy nền có notification bắt buộc).
+- Giả định người đọc chưa thuộc Kotlin: giải thích cú pháp mới (`?.`, `data class`, `companion object`, lambda, coroutine…) lần đầu xuất hiện trong phiên (hoặc nhắc lại ngắn nếu đã lâu).
+- Dùng ví dụ ngắn từ **chính code vừa sửa** trong project — không lý thuyết suông.
+
+## Phạm vi giải thích theo loại thay đổi
+
+| Loại thay đổi | Phải nhấn mạnh |
+|---|---|
+| `AndroidManifest.xml` | Permission, component (`activity`/`service`), `exported`, `foregroundServiceType` |
+| Activity / UI | Lifecycle (`onCreate`…), ViewBinding, Intent |
+| Service | Foreground vs background, notification channel, `startForeground` |
+| WorkManager | Worker, PeriodicWork, constraint, khác Service thế nào |
+| Gradle (`*.gradle.kts`) | dependency, plugin, SDK level, vì sao cần thư viện đó |
+| Permission runtime | Khác permission Manifest; flow xin quyền Android 13+ |
+
+## Không được
+
+- Sửa code rồi chỉ nói “done” / liệt kê file mà không giải thích.
+- Dùng jargon dày đặc không giải nghĩa.
+- Giả định người dùng đã biết Android architecture / Kotlin coroutines / Jetpack.
+
+## Được phép rút gọn khi
+
+- Sửa typo / rename thuần túy → 1–2 câu khái niệm + vì sao vẫn đủ.
+- Cùng một khái niệm vừa giải thích kỹ ở ngay lượt trước trong hội thoại → nhắc ngắn + link, không copy dài lại.

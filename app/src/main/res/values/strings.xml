@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Background App Demo</string>
+    <string name="app_subtitle">Foreground service and WorkManager demo</string>
+    <string name="status_idle">Status: idle</string>
+    <string name="status_service_running">Status: foreground service running</string>
+    <string name="status_service_stopped">Status: foreground service stopped</string>
+    <string name="status_work_scheduled">Status: periodic WorkManager job scheduled</string>
+    <string name="status_work_cancelled">Status: WorkManager job cancelled</string>
+    <string name="btn_start_service">Start foreground service</string>
+    <string name="btn_stop_service">Stop foreground service</string>
+    <string name="btn_schedule_work">Schedule periodic work</string>
+    <string name="btn_cancel_work">Cancel periodic work</string>
+    <string name="notification_permission_denied">Notification permission denied</string>
+    <string name="notification_channel_name">Background demo</string>
+    <string name="notification_channel_description">Shows foreground service activity</string>
+    <string name="notification_title">Background demo running</string>
+    <string name="notification_starting">Service started</string>
+    <string name="notification_content">Tick #%1$d at %2$s</string>
+    <string name="learning_log_title">Learning log (on-screen)</string>
+    <string name="learning_log_empty">Chưa có log. Bấm các nút phía trên để xem trace.</string>
+    <string name="btn_clear_log">Clear</string>
+</resources>

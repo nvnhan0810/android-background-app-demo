@@ -1,0 +1,36 @@
+---
+description: Learning app — hiện log/debug/trace trực tiếp trên UI, không cần care bảo mật
+alwaysApply: true
+---
+
+# In-app learning logs (newbie debug)
+
+Đây là **app học**, không phải production. Ưu tiên **nhìn thấy ngay trên màn hình** mọi thứ đang xảy ra.
+
+## Bắt buộc
+
+Khi thêm / sửa logic (Activity, Service, Worker, permission, network, parse…):
+
+1. Ghi sự kiện quan trọng vào **`LearningLog`** (panel log trên app), không chỉ `Log.d` / Logcat.
+2. Bọc chỗ dễ lỗi bằng `try/catch` và gọi `LearningLog.e(...)` kèm **message dễ đọc** + stack trace ngắn.
+3. Trace luồng: bắt đầu / kết thúc action, nhánh if (xin quyền granted/denied), lifecycle đáng chú ý (`onCreate`, `onDestroy`, start/stop service…).
+4. Lỗi phải **hiện trên UI log panel** — Toast chỉ là phụ, không thay thế panel.
+5. Không “giấu” exception. Learning app: hiện rõ vì sao fail.
+
+## Dùng sẵn trong project
+
+- `LearningLog.d/i/w/e(tag, message, throwable?)` — ghi log + (tuỳ chọn) vẫn mirror sang `android.util.Log`
+- Panel trên `MainActivity` (`txtLearningLog`) — user đọc trực tiếp
+- Nút Clear log khi cần
+
+Mọi feature mới phải **hook vào `LearningLog`**. Nếu tạo màn hình mới: tái sử dụng panel chung hoặc gắn listener `LearningLog`, đừng tạo hệ thống log song song.
+
+## Không cần (trong project này)
+
+- Che PII / token / secret trên UI
+- Tắt log ở release / ProGuard strip log
+- Chỉ dựa vào Logcat / Android Studio debugger như kênh chính cho newbie
+
+## Khi giải thích (kèm teaching rule)
+
+Nhắc ngắn: khác nhau **Logcat** (cần máy tính + Android Studio) vs **in-app log** (nhìn trên điện thoại/emulator). Vì sao learning app chọn in-app.
