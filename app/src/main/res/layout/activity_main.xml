@@ -1,153 +1,385 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/root"
+    android:id="@+id/rootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/txtTitle"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/root"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/txtSubtitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/app_subtitle"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtTitle" />
-
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/status_idle"
-        android:textAppearance="?attr/textAppearanceBodyLarge"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtSubtitle" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnStartService"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="6dp"
-        android:text="@string/btn_start_service"
-        app:layout_constraintEnd_toStartOf="@id/btnStopService"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtStatus" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnStopService"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:text="@string/btn_stop_service"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnStartService"
-        app:layout_constraintTop_toTopOf="@id/btnStartService" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnScheduleWork"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="6dp"
-        android:text="@string/btn_schedule_work"
-        app:layout_constraintEnd_toStartOf="@id/btnCancelWork"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnStartService" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnCancelWork"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:text="@string/btn_cancel_work"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnScheduleWork"
-        app:layout_constraintTop_toTopOf="@id/btnScheduleWork" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnTestDb"
-        style="@style/Widget.Material3.Button.TonalButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="6dp"
-        android:text="@string/btn_test_db"
-        app:layout_constraintEnd_toStartOf="@id/btnBatteryOpt"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnScheduleWork" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnBatteryOpt"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="6dp"
-        android:text="@string/btn_battery_opt"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnTestDb"
-        app:layout_constraintTop_toTopOf="@id/btnTestDb" />
-
-    <TextView
-        android:id="@+id/txtLogTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/learning_log_title"
-        android:textAppearance="?attr/textAppearanceTitleSmall"
-        app:layout_constraintEnd_toStartOf="@id/btnClearLog"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnTestDb" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnClearLog"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_clear_log"
-        app:layout_constraintBottom_toBottomOf="@id/txtLogTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/txtLogTitle" />
-
-    <ScrollView
-        android:id="@+id/scrollLearningLog"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:background="#111827"
-        android:fillViewport="true"
-        android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtLogTitle">
+        android:orientation="vertical"
+        android:paddingBottom="24dp">
 
         <TextView
-            android:id="@+id/txtLearningLog"
+            android:id="@+id/txtTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:text="@string/learning_log_empty"
-            android:textColor="#D1FAE5"
-            android:textIsSelectable="true"
-            android:textSize="11sp" />
-    </ScrollView>
+            android:text="@string/app_name"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/txtSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/app_subtitle"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/status_idle"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <!-- Token -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilToken"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="@string/hint_bot_token">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtToken"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveToken"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/btn_save_token" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStartService"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/btn_start_listen" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStopService"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_stop_listen" />
+        </LinearLayout>
+
+        <!-- Totals -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/section_totals"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <TextView
+            android:id="@+id/txtTotals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="#EEF2FF"
+            android:fontFamily="monospace"
+            android:padding="10dp"
+            android:text="@string/totals_empty"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/txtBalanceDiff"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtCustomers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="monospace"
+            android:textSize="12sp" />
+
+        <!-- Price ratios -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/section_ratio"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleRatio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:checkedButton="@+id/btnRatio10"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRatio10"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/ratio_10" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRatio12"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/ratio_12" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRatio15"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/ratio_15" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Settle 0..4 -->
+        <TextView
+            android:id="@+id/txtSelectedCustomer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/section_settle"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettle0"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="0" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettle1"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettle2"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="2" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettle3"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="3" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettle4"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4" />
+        </LinearLayout>
+
+        <!-- Backup + battery -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/btn_export" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnImport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="@string/btn_import" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBatteryOpt"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/btn_battery_opt" />
+        </LinearLayout>
+
+        <!-- Message journal accordion -->
+        <LinearLayout
+            android:id="@+id/headerJournal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/txtJournalTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/journal_title_collapsed"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <TextView
+                android:id="@+id/txtJournalChevron"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▼"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/panelJournal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/txtJournal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#F8FAFC"
+                android:fontFamily="monospace"
+                android:maxHeight="180dp"
+                android:padding="8dp"
+                android:text="@string/journal_empty"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Learning log accordion -->
+        <LinearLayout
+            android:id="@+id/headerLearningLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingVertical="8dp">
+
+            <TextView
+                android:id="@+id/txtLogTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/learning_log_title"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClearLog"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:text="@string/btn_clear_log" />
+
+            <TextView
+                android:id="@+id/txtLogChevron"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▲"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/panelLearningLog"
+            android:layout_width="match_parent"
+            android:layout_height="220dp">
+
+            <ScrollView
+                android:id="@+id/scrollLearningLog"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#111827"
+                android:fillViewport="true"
+                android:padding="8dp">
+
+                <TextView
+                    android:id="@+id/txtLearningLog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="@string/learning_log_empty"
+                    android:textColor="#D1FAE5"
+                    android:textIsSelectable="true"
+                    android:textSize="11sp" />
+            </ScrollView>
+        </FrameLayout>
+
+        <!-- Hidden legacy hooks kept for optional demos (gone) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnScheduleWork"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelWork"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestDb"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

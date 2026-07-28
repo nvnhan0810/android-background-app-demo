@@ -6,7 +6,7 @@ import com.nvnhan0810.backgrounddemo.LearningLog
 
 /**
  * Singleton giữ 1 kết nối Room/SQLite cho cả app.
- * File DB nằm trong internal storage của app — không cần server, không cần internet.
+ * File DB nằm trong internal storage — không cần server.
  */
 object DatabaseProvider {
 
@@ -22,21 +22,18 @@ object DatabaseProvider {
     }
 
     private fun build(context: Context): AppDatabase {
-        LearningLog.i(TAG, "Building Room database name=$DB_NAME")
+        LearningLog.i(TAG, "Building Room database name=$DB_NAME version=2")
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             DB_NAME
         )
-            // Learning only: cho phép query trên main thread để chưa cần học coroutine.
-            // Production nên dùng Dispatchers.IO / suspend DAO.
+            // Learning: đổi schema → xoá DB cũ (đơn giản hơn Migration).
+            .fallbackToDestructiveMigration()
             .allowMainThreadQueries()
             .build()
     }
 
-    /**
-     * Mở DB + ghi 1 dòng smoke-test, trả về thông tin để hiện trên LearningLog / UI.
-     */
     fun openAndSmokeTest(context: Context): DbConnectionInfo {
         val appContext = context.applicationContext
         val file = appContext.getDatabasePath(DB_NAME)
@@ -71,7 +68,8 @@ object DatabaseProvider {
             LearningLog.i(
                 TAG,
                 "SQLite OK path=${info.absolutePath} exists=${info.fileExists} " +
-                    "size=${info.fileBytes}B rows=${info.metaCount} boot=${info.bootValue}"
+                    "size=${info.fileBytes}B rows=${info.metaCount} boot=${info.bootValue} " +
+                    "messages=${db.inboundMessageDao().count()} ledger=${db.ledgerEntryDao().count()}"
             )
         } else {
             LearningLog.e(TAG, "SQLite smoke-test FAILED — readBack was null")

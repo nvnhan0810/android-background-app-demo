@@ -1,30 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Background App Demo</string>
-    <string name="app_subtitle">Local SQLite + background demos (learning)</string>
+    <string name="app_name">TG Ledger Demo</string>
+    <string name="app_subtitle">Telegram long-poll + sổ cái local (learning)</string>
     <string name="status_idle">Status: idle</string>
-    <string name="status_service_running">Status: foreground service running</string>
-    <string name="status_service_stopped">Status: foreground service stopped</string>
+    <string name="status_service_running">Status: đang lắng nghe Telegram (FGS)</string>
+    <string name="status_service_stopped">Status: đã dừng lắng nghe</string>
     <string name="status_work_scheduled">Status: periodic WorkManager job scheduled</string>
     <string name="status_work_cancelled">Status: WorkManager job cancelled</string>
     <string name="status_db_ok">Status: SQLite OK — %1$s (%2$d rows)</string>
     <string name="status_db_fail">Status: SQLite FAILED — xem learning log</string>
     <string name="btn_start_service">Start foreground service</string>
     <string name="btn_stop_service">Stop foreground service</string>
+    <string name="btn_start_listen">Bật nghe</string>
+    <string name="btn_stop_listen">Tắt</string>
+    <string name="btn_save_token">Lưu token</string>
+    <string name="hint_bot_token">Bot token (BotFather)</string>
     <string name="btn_schedule_work">Schedule periodic work</string>
     <string name="btn_cancel_work">Cancel periodic work</string>
     <string name="btn_test_db">Test local SQLite</string>
-    <string name="btn_battery_opt">Bỏ tối ưu pin (keep-alive)</string>
+    <string name="btn_battery_opt">Bỏ tối ưu pin</string>
+    <string name="btn_export">Xuất</string>
+    <string name="btn_import">Nhập</string>
+    <string name="section_totals">Tổng theo mã</string>
+    <string name="section_ratio">Tỷ lệ giá (× qty)</string>
+    <string name="section_settle">Tất toán vị (0–4) — khách đang chọn</string>
+    <string name="ratio_10">×1.0</string>
+    <string name="ratio_12">×1.2</string>
+    <string name="ratio_15">×1.5</string>
+    <string name="totals_empty">Chưa có số liệu. Gửi tin dạng: A12 5</string>
+    <string name="balance_diff">Chênh lệch cân bảng (net qty): %1$s | Ước giá: %2$s (×%3$s)</string>
+    <string name="selected_customer">Khách chọn: %1$s</string>
+    <string name="journal_title_collapsed">Nhật ký tin nhắn ▸ (chạm để mở)</string>
+    <string name="journal_title_expanded">Nhật ký tin nhắn ▾ (chạm để đóng)</string>
+    <string name="journal_empty">Chưa có tin đã lưu.</string>
+    <string name="learning_log_title_collapsed">Learning log ▸</string>
+    <string name="learning_log_title_expanded">Learning log ▾</string>
     <string name="status_battery_unrestricted">Status: battery unrestricted OK</string>
     <string name="status_battery_restricted">Status: mở dialog bỏ tối ưu pin…</string>
-    <string name="status_keepalive">KeepAlive: service=%1$s work=%2$s</string>
+    <string name="status_keepalive">KeepAlive: service=%1$s listen=%2$s</string>
     <string name="notification_permission_denied">Notification permission denied</string>
-    <string name="notification_channel_name">Background demo</string>
-    <string name="notification_channel_description">Shows foreground service activity</string>
-    <string name="notification_title">Background demo running</string>
-    <string name="notification_starting">Service started</string>
+    <string name="notification_channel_name">Telegram ledger</string>
+    <string name="notification_channel_description">Long-poll Telegram ở nền</string>
+    <string name="notification_title">Đang lắng nghe Telegram</string>
+    <string name="notification_starting">Bắt đầu long-poll…</string>
     <string name="notification_content">Tick #%1$d at %2$s</string>
     <string name="learning_log_title">Learning log (on-screen)</string>
-    <string name="learning_log_empty">Chưa có log. Bấm các nút phía trên để xem trace.</string>
+    <string name="learning_log_empty">Chưa có log. Bật nghe / gửi tin để xem trace.</string>
     <string name="btn_clear_log">Clear</string>
+    <string name="token_saved">Đã lưu bot token</string>
+    <string name="token_missing">Nhập bot token trước khi bật nghe</string>
+    <string name="export_ok">Xuất backup OK</string>
+    <string name="export_fail">Xuất backup thất bại</string>
+    <string name="import_ok">Nhập backup OK</string>
+    <string name="import_fail">Nhập backup thất bại</string>
 </resources>

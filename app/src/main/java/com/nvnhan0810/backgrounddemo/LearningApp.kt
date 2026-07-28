@@ -2,6 +2,8 @@ package com.nvnhan0810.backgrounddemo
 
 import android.app.Application
 import com.nvnhan0810.backgrounddemo.db.DatabaseProvider
+import com.nvnhan0810.backgrounddemo.ledger.LedgerProcessor
+import com.nvnhan0810.backgrounddemo.ledger.LedgerQueue
 
 /**
  * Application = object sống suốt vòng đời process app.
@@ -32,6 +34,8 @@ class LearningApp : Application() {
         }
 
         openLocalDatabase()
+        // Single-writer queue sẵn sàng cả khi UI tất toán lúc service chưa chạy.
+        LedgerQueue.start(LedgerProcessor(this))
         KeepAliveRestorer.restore(this, reason = "LearningApp.onCreate")
     }
 
