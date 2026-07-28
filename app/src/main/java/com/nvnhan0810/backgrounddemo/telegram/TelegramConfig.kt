@@ -23,12 +23,41 @@ object TelegramConfig {
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    /**
+     * Token từ BotFather dạng `123456:AA...`.
+     * Khi paste từ điện thoại hay dính khoảng trắng / xuống dòng → Telegram trả HTTP 401.
+     */
+    fun sanitizeToken(raw: String): String =
+        raw.trim()
+            .replace("\uFEFF", "") // BOM
+            .replace(Regex("\\s+"), "")
+
     fun getBotToken(context: Context): String =
-        prefs(context).getString(KEY_TOKEN, "")?.trim().orEmpty()
+        sanitizeToken(prefs(context).getString(KEY_TOKEN, "").orEmpty())
 
     fun setBotToken(context: Context, token: String) {
-        prefs(context).edit().putString(KEY_TOKEN, token.trim()).apply()
-        LearningLog.i(TAG, "Bot token saved (len=${token.trim().length})")
+        val clean = sanitizeToken(token)
+        val old = getBotToken(context)
+        prefs(context).edit().putString(KEY_TOKEN, clean).apply()
+        LearningLog.i(
+            TAG,
+            "Bot token saved len=${clean.length} looksLikeToken=${looksLikeBotToken(clean)}"
+        )
+        // Đổi token → reset offset để không “nhảy” queue cũ của bot khác.
+        if (old.isNotEmpty() && old != clean) {
+            setUpdateOffset(context, 0L)
+            LearningLog.i(TAG, "Token changed — reset update offset=0")
+        }
+    }
+
+    fun looksLikeBotToken(token: String): Boolean {
+        val parts = token.split(':', limit = 2)
+        if (parts.size != 2) return false
+        val id = parts[0]
+        val secret = parts[1]
+        return id.length >= 5 && id.all { it.isDigit() } &&
+            secret.length >= 20 &&
+            secret.all { it.isLetterOrDigit() || it == '_' || it == '-' }
     }
 
     fun getUpdateOffset(context: Context): Long =

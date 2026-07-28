@@ -29,6 +29,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".LearningLogActivity"
+            android:exported="false"
+            android:label="@string/learning_log_title"
+            android:parentActivityName=".MainActivity" />
+
         <service
             android:name=".DemoForegroundService"
             android:exported="false"

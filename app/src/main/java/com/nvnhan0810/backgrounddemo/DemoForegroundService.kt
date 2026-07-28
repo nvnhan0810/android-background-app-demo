@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Foreground Service long-poll Telegram getUpdates liên tục.
- * Giữ process sống khi tắt màn hình (kèm notification bắt buộc).
  */
 class DemoForegroundService : Service() {
 
@@ -47,7 +46,7 @@ class DemoForegroundService : Service() {
                 ACTION_STOP -> {
                     KeepAliveStore.setServiceEnabled(this, false)
                     TelegramConfig.setListenEnabled(this, false)
-                    stopListen()
+                    stopListen(removeNotification = true)
                     START_NOT_STICKY
                 }
                 else -> {
@@ -82,33 +81,64 @@ class DemoForegroundService : Service() {
 
         acquireWakeLock()
 
+        // Restart poll thread nếu đang chạy (token mới / bấm Bật nghe lại).
         if (pollThreadAlive.get()) {
-            LearningLog.i(TAG, "Poll thread already running")
-            return
+            LearningLog.i(TAG, "Restarting poll thread")
+            pollThreadAlive.set(false)
+            pollThread?.interrupt()
+            try {
+                pollThread?.join(1_500)
+            } catch (_: InterruptedException) {
+                // ignore
+            }
         }
         pollThreadAlive.set(true)
-        pollThread = Thread({
-            pollLoop()
-        }, "tg-long-poll").also { it.start() }
+        pollThread = Thread({ pollLoop() }, "tg-long-poll").also { it.start() }
         LearningLog.i(TAG, "Long-poll thread started")
     }
 
-    private fun stopListen() {
+    private fun stopListen(removeNotification: Boolean) {
         pollThreadAlive.set(false)
         pollThread?.interrupt()
         pollThread = null
         releaseWakeLock()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
-        LearningLog.i(TAG, "stopListen — stopForeground + stopSelf")
+        if (removeNotification) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
+        LearningLog.i(TAG, "stopListen removeNotification=$removeNotification")
     }
 
     private fun pollLoop() {
         val token = TelegramConfig.getBotToken(this)
         if (token.isBlank()) {
             LearningLog.e(TAG, "Bot token trống — dừng poll")
-            updateNotification("Chưa có bot token")
-            pollThreadAlive.set(false)
+            failAndStop("Chưa có bot token")
+            return
+        }
+        if (!TelegramConfig.looksLikeBotToken(token)) {
+            LearningLog.e(TAG, "Token format lạ len=${token.length} — thường dính space khi paste")
+            failAndStop("Token sai format — paste lại từ BotFather")
+            return
+        }
+
+        try {
+            LearningLog.i(TAG, "getMe kiểm tra token…")
+            updateNotification("Đang kiểm tra token…")
+            val me = TelegramApi.getMe(token)
+            updateNotification("OK @${me.username} — polling…")
+            sendBroadcast(
+                Intent(ACTION_STATUS).setPackage(packageName)
+                    .putExtra(EXTRA_STATUS, "Token OK @${me.username} — đang nghe")
+            )
+        } catch (t: Throwable) {
+            LearningLog.e(TAG, "getMe failed — không poll", t)
+            val msg = when {
+                t is TelegramApi.HttpException && t.httpCode == 401 ->
+                    "HTTP 401: token sai/hết hạn. Lưu lại token rồi Bật nghe."
+                else -> "Token lỗi: ${t.message?.take(80)}"
+            }
+            failAndStop(msg)
             return
         }
 
@@ -122,7 +152,6 @@ class DemoForegroundService : Service() {
                 updateNotification("Polling… offset=$offset")
                 val updates = TelegramApi.getUpdates(token, offset, timeoutSec = 25)
                 consecutiveErrors = 0
-                // Gia hạn wake lock định kỳ (PARTIAL_WAKE_LOCK có timeout).
                 acquireWakeLock()
 
                 if (updates.isEmpty()) {
@@ -149,19 +178,27 @@ class DemoForegroundService : Service() {
                         LearningLog.i(TAG, "Ledger reply: $reply")
                         try {
                             TelegramApi.sendMessage(token, u.chatId, reply)
-                        } catch (t: Throwable) {
-                            LearningLog.e(TAG, "Auto-reply failed", t)
+                        } catch (err: Throwable) {
+                            LearningLog.e(TAG, "Auto-reply failed", err)
                         }
-                        // Broadcast để UI refresh (nếu đang mở)
                         sendBroadcast(Intent(ACTION_LEDGER_CHANGED).setPackage(packageName))
                     }
                 }
                 TelegramConfig.setUpdateOffset(this, maxId)
                 updateNotification("Đã xử lý ${updates.size} update(s), nextOffset=$maxId")
             } catch (t: Throwable) {
+                if (t is TelegramApi.HttpException && t.httpCode == 401) {
+                    LearningLog.e(TAG, "Poll 401 — dừng hẳn", t)
+                    failAndStop("HTTP 401 khi poll — kiểm tra lại token")
+                    return
+                }
                 consecutiveErrors++
                 LearningLog.e(TAG, "Poll error #$consecutiveErrors", t)
                 updateNotification("Lỗi poll: ${t.message?.take(40)}")
+                sendBroadcast(
+                    Intent(ACTION_STATUS).setPackage(packageName)
+                        .putExtra(EXTRA_STATUS, "Lỗi poll: ${t.message?.take(60)}")
+                )
                 try {
                     Thread.sleep((2_000L * consecutiveErrors).coerceAtMost(30_000L))
                 } catch (_: InterruptedException) {
@@ -172,15 +209,31 @@ class DemoForegroundService : Service() {
         LearningLog.i(TAG, "pollLoop ended")
     }
 
+    private fun failAndStop(message: String) {
+        LearningLog.e(TAG, "failAndStop: $message")
+        updateNotification(message)
+        sendBroadcast(
+            Intent(ACTION_STATUS).setPackage(packageName).putExtra(EXTRA_STATUS, message)
+        )
+        KeepAliveStore.setServiceEnabled(this, false)
+        TelegramConfig.setListenEnabled(this, false)
+        pollThreadAlive.set(false)
+        releaseWakeLock()
+        // Giữ notification lỗi vài giây để user đọc; không remove ngay.
+        stopSelf()
+    }
+
     private fun acquireWakeLock() {
         try {
-            if (wakeLock?.isHeld == true) return
+            if (wakeLock?.isHeld == true) {
+                // Re-acquire với timeout mới
+                wakeLock?.release()
+            }
             val pm = getSystemService(PowerManager::class.java)
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "bgdemo:tg-poll").apply {
                 setReferenceCounted(false)
-                acquire(60 * 60 * 1000L) // 60 phút; poll loop sẽ refresh
+                acquire(60 * 60 * 1000L)
             }
-            LearningLog.d(TAG, "PARTIAL_WAKE_LOCK acquired")
         } catch (t: Throwable) {
             LearningLog.e(TAG, "WakeLock failed", t)
         }
@@ -236,6 +289,7 @@ class DemoForegroundService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -247,6 +301,8 @@ class DemoForegroundService : Service() {
         const val ACTION_START = "com.nvnhan0810.backgrounddemo.action.START"
         const val ACTION_STOP = "com.nvnhan0810.backgrounddemo.action.STOP"
         const val ACTION_LEDGER_CHANGED = "com.nvnhan0810.backgrounddemo.action.LEDGER_CHANGED"
+        const val ACTION_STATUS = "com.nvnhan0810.backgrounddemo.action.STATUS"
+        const val EXTRA_STATUS = "status"
 
         private const val TAG = "TgFgService"
         private const val CHANNEL_ID = "demo_foreground_channel"

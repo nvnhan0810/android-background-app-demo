@@ -11,10 +11,17 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 /**
- * Gọi Bot API bằng HttpURLConnection (không thêm thư viện HTTP).
+ * Gọi Bot API bằng HttpURLConnection.
  * Base: https://api.telegram.org/bot<token>/METHOD
+ *
+ * HTTP 401 = token sai / hết hạn / dính ký tự lạ khi paste.
  */
 object TelegramApi {
+
+    class HttpException(
+        val httpCode: Int,
+        message: String
+    ) : Exception(message)
 
     data class TgUpdate(
         val updateId: Long,
@@ -27,9 +34,32 @@ object TelegramApi {
         enum class Kind { MESSAGE, EDITED_MESSAGE }
     }
 
+    data class BotInfo(
+        val id: Long,
+        val username: String,
+        val firstName: String
+    )
+
+    /** Kiểm tra token trước khi long-poll. */
+    fun getMe(token: String): BotInfo {
+        val body = get(token, "getMe")
+        val root = JSONObject(body)
+        if (!root.optBoolean("ok", false)) {
+            throw IllegalStateException(root.optString("description", "getMe failed"))
+        }
+        val result = root.getJSONObject("result")
+        val info = BotInfo(
+            id = result.optLong("id"),
+            username = result.optString("username"),
+            firstName = result.optString("first_name")
+        )
+        LearningLog.i(TAG, "getMe OK @${info.username} id=${info.id}")
+        return info
+    }
+
     fun deleteWebhook(token: String): Boolean {
         return try {
-            val body = get(token, "deleteWebhook")
+            val body = get(token, "deleteWebhook?drop_pending_updates=false")
             val ok = JSONObject(body).optBoolean("ok", false)
             LearningLog.i(TAG, "deleteWebhook ok=$ok")
             ok
@@ -109,7 +139,9 @@ object TelegramApi {
     }
 
     private fun get(token: String, methodAndQuery: String, readTimeoutMs: Int = 30_000): String {
-        val url = URL("https://api.telegram.org/bot$token/$methodAndQuery")
+        val clean = TelegramConfig.sanitizeToken(token)
+        // Encode từng segment của path method; token giữ nguyên (Bot API chuẩn).
+        val url = URL("https://api.telegram.org/bot$clean/$methodAndQuery")
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 15_000
@@ -118,10 +150,24 @@ object TelegramApi {
         }
         try {
             val code = conn.responseCode
-            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            val text = BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
+            val stream = if (code in 200..299) {
+                conn.inputStream
+            } else {
+                conn.errorStream ?: conn.inputStream
+            }
+            val text = if (stream != null) {
+                BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
+            } else {
+                ""
+            }
             if (code !in 200..299) {
-                throw IllegalStateException("HTTP $code: ${text.take(300)}")
+                val hint = when (code) {
+                    401 -> "Token sai hoặc hết hạn (HTTP 401). Paste lại từ BotFather, bấm Lưu token."
+                    404 -> "Token/URL không tồn tại (HTTP 404)."
+                    else -> "HTTP $code"
+                }
+                LearningLog.e(TAG, "$hint body=${text.take(200)}")
+                throw HttpException(code, "$hint ${text.take(120)}")
             }
             return text
         } finally {

@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.TypedValue
-import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +25,7 @@ import com.nvnhan0810.backgrounddemo.db.DatabaseProvider
 import com.nvnhan0810.backgrounddemo.ledger.LedgerBackup
 import com.nvnhan0810.backgrounddemo.ledger.LedgerQueue
 import com.nvnhan0810.backgrounddemo.ledger.MessageParser
+import com.nvnhan0810.backgrounddemo.telegram.TelegramApi
 import com.nvnhan0810.backgrounddemo.telegram.TelegramConfig
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -34,33 +34,22 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private var journalExpanded = false
-    private var learningLogExpanded = true
-
-    private val logListener: (List<LearningLog.Entry>) -> Unit = { entries ->
-        binding.txtLearningLog.text = if (entries.isEmpty()) {
-            getString(R.string.learning_log_empty)
-        } else {
-            entries.joinToString("\n") { it.toDisplayLine() }
-        }
-        binding.scrollLearningLog.post {
-            binding.scrollLearningLog.fullScroll(android.view.View.FOCUS_DOWN)
-        }
-    }
 
     private val ledgerChangedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            refreshTotals()
-            refreshJournal()
-            // Accordion tự mở khi có tin mới, rồi tự đóng sau vài giây (tiết kiệm chỗ).
-            applyJournalExpanded(true)
-            binding.rootScroll.removeCallbacks(collapseJournalRunnable)
-            binding.rootScroll.postDelayed(collapseJournalRunnable, 4_000L)
+            when (intent?.action) {
+                DemoForegroundService.ACTION_LEDGER_CHANGED -> {
+                    refreshTotals()
+                    refreshJournal()
+                }
+                DemoForegroundService.ACTION_STATUS -> {
+                    val status = intent.getStringExtra(DemoForegroundService.EXTRA_STATUS)
+                    if (!status.isNullOrBlank()) {
+                        binding.txtStatus.text = status
+                    }
+                }
+            }
         }
-    }
-
-    private val collapseJournalRunnable = Runnable {
-        applyJournalExpanded(false)
     }
 
     private val notificationPermissionLauncher =
@@ -69,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             if (granted) {
                 startListenService()
             } else {
-                LearningLog.w(TAG, "User denied notification permission — service not started")
+                LearningLog.w(TAG, "User denied notification permission")
                 Toast.makeText(this, R.string.notification_permission_denied, Toast.LENGTH_SHORT)
                     .show()
             }
@@ -111,26 +100,26 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.rootScroll)
         applySafeAreaInsets()
 
-        LearningLog.addListener(logListener)
-        LearningLog.i(TAG, "onCreate — Telegram ledger UI")
+        LearningLog.i(TAG, "onCreate — ledger page (log ở trang riêng)")
 
         binding.edtToken.setText(TelegramConfig.getBotToken(this))
         syncRatioToggle()
-        applyJournalExpanded(false)
-        applyLearningLogExpanded(true)
         refreshTotals()
         refreshJournal()
         refreshKeepAliveStatus()
 
+        binding.btnOpenLog.setOnClickListener {
+            startActivity(Intent(this, LearningLogActivity::class.java))
+        }
+
         binding.btnSaveToken.setOnClickListener {
-            val token = binding.edtToken.text?.toString().orEmpty()
-            TelegramConfig.setBotToken(this, token)
-            Toast.makeText(this, R.string.token_saved, Toast.LENGTH_SHORT).show()
-            binding.txtStatus.setText(R.string.token_saved)
+            saveTokenFromUi(validateRemote = true)
         }
 
         binding.btnStartService.setOnClickListener {
             LearningLog.d(TAG, "Click: Start Telegram listen")
+            // Luôn lưu lại ô token trước khi bật (tránh quên bấm Lưu).
+            if (!saveTokenFromUi(validateRemote = false)) return@setOnClickListener
             ensureNotificationPermissionThenStart()
         }
         binding.btnStopService.setOnClickListener {
@@ -140,13 +129,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnBatteryOpt.setOnClickListener {
             requestIgnoreBatteryOptimizations()
         }
-        binding.btnClearLog.setOnClickListener {
-            LearningLog.clear()
-            LearningLog.i(TAG, "Log cleared by user")
-        }
         binding.btnExport.setOnClickListener {
-            val name = "tg-ledger-backup-${System.currentTimeMillis()}.json"
-            exportLauncher.launch(name)
+            exportLauncher.launch("tg-ledger-backup-${System.currentTimeMillis()}.json")
         }
         binding.btnImport.setOnClickListener {
             importLauncher.launch(arrayOf("application/json", "*/*"))
@@ -168,19 +152,67 @@ class MainActivity : AppCompatActivity() {
         binding.btnSettle2.setOnClickListener { settle(2) }
         binding.btnSettle3.setOnClickListener { settle(3) }
         binding.btnSettle4.setOnClickListener { settle(4) }
+    }
 
-        binding.headerJournal.setOnClickListener {
-            applyJournalExpanded(!journalExpanded)
+    /**
+     * @return false nếu token trống / format sai
+     */
+    private fun saveTokenFromUi(validateRemote: Boolean): Boolean {
+        val raw = binding.edtToken.text?.toString().orEmpty()
+        val clean = TelegramConfig.sanitizeToken(raw)
+        binding.edtToken.setText(clean)
+        if (clean.isBlank()) {
+            Toast.makeText(this, R.string.token_missing, Toast.LENGTH_SHORT).show()
+            binding.txtStatus.setText(R.string.token_missing)
+            return false
         }
-        binding.headerLearningLog.setOnClickListener {
-            // Clear button is separate; header toggles panel
-            applyLearningLogExpanded(!learningLogExpanded)
+        if (!TelegramConfig.looksLikeBotToken(clean)) {
+            val msg = getString(R.string.token_bad_format, clean.length)
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+            binding.txtStatus.text = msg
+            LearningLog.w(TAG, msg)
+            TelegramConfig.setBotToken(this, clean) // vẫn lưu để user sửa tiếp
+            return false
         }
+        TelegramConfig.setBotToken(this, clean)
+        LearningLog.i(TAG, "Token saved locally len=${clean.length}")
+
+        if (!validateRemote) {
+            binding.txtStatus.setText(R.string.token_saved)
+            return true
+        }
+
+        binding.txtStatus.setText(R.string.token_checking)
+        Thread {
+            try {
+                val me = TelegramApi.getMe(clean)
+                runOnUiThread {
+                    val ok = getString(R.string.token_ok, me.username.ifBlank { me.firstName })
+                    binding.txtStatus.text = ok
+                    Toast.makeText(this, ok, Toast.LENGTH_SHORT).show()
+                }
+            } catch (t: Throwable) {
+                LearningLog.e(TAG, "getMe while save failed", t)
+                runOnUiThread {
+                    val err = when {
+                        t is TelegramApi.HttpException && t.httpCode == 401 ->
+                            getString(R.string.token_unauthorized)
+                        else -> getString(R.string.token_check_fail, t.message?.take(80) ?: "?")
+                    }
+                    binding.txtStatus.text = err
+                    Toast.makeText(this, err, Toast.LENGTH_LONG).show()
+                }
+            }
+        }.start()
+        return true
     }
 
     override fun onStart() {
         super.onStart()
-        val filter = IntentFilter(DemoForegroundService.ACTION_LEDGER_CHANGED)
+        val filter = IntentFilter().apply {
+            addAction(DemoForegroundService.ACTION_LEDGER_CHANGED)
+            addAction(DemoForegroundService.ACTION_STATUS)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(ledgerChangedReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
@@ -220,19 +252,12 @@ class MainActivity : AppCompatActivity() {
                 loggedSafeAreaOnce = true
                 LearningLog.i(
                     TAG,
-                    "Safe area applied L=${bars.left} T=${bars.top} R=${bars.right} B=${bars.bottom}"
+                    "Safe area L=${bars.left} T=${bars.top} R=${bars.right} B=${bars.bottom}"
                 )
             }
             windowInsets
         }
         ViewCompat.requestApplyInsets(binding.rootScroll)
-    }
-
-    override fun onDestroy() {
-        binding.rootScroll.removeCallbacks(collapseJournalRunnable)
-        LearningLog.i(TAG, "onDestroy — remove log listener")
-        LearningLog.removeListener(logListener)
-        super.onDestroy()
     }
 
     private fun settle(positions: Int) {
@@ -318,39 +343,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun applyJournalExpanded(expanded: Boolean) {
-        journalExpanded = expanded
-        binding.panelJournal.visibility = if (expanded) View.VISIBLE else View.GONE
-        binding.txtJournalTitle.setText(
-            if (expanded) R.string.journal_title_expanded else R.string.journal_title_collapsed
-        )
-        binding.txtJournalChevron.text = if (expanded) "▾" else "▸"
-        if (expanded) refreshJournal()
-    }
-
-    private fun applyLearningLogExpanded(expanded: Boolean) {
-        learningLogExpanded = expanded
-        binding.panelLearningLog.visibility = if (expanded) View.VISIBLE else View.GONE
-        binding.txtLogTitle.setText(
-            if (expanded) R.string.learning_log_title_expanded else R.string.learning_log_title_collapsed
-        )
-        binding.txtLogChevron.text = if (expanded) "▾" else "▸"
-    }
-
     private fun ensureNotificationPermissionThenStart() {
         try {
-            if (TelegramConfig.getBotToken(this).isBlank() &&
-                binding.edtToken.text?.isNotBlank() == true
-            ) {
-                TelegramConfig.setBotToken(this, binding.edtToken.text.toString())
-            }
             if (TelegramConfig.getBotToken(this).isBlank()) {
                 Toast.makeText(this, R.string.token_missing, Toast.LENGTH_SHORT).show()
                 binding.txtStatus.setText(R.string.token_missing)
-                LearningLog.w(TAG, "Start blocked — missing bot token")
                 return
             }
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val granted = ContextCompat.checkSelfPermission(
                     this,
@@ -378,7 +377,6 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, intent)
             binding.txtStatus.setText(R.string.status_service_running)
             LearningLog.i(TAG, "startForegroundService Telegram listen ON")
-            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "startListenService failed", t)
         }
@@ -394,7 +392,6 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
             binding.txtStatus.setText(R.string.status_service_stopped)
             LearningLog.i(TAG, "Telegram listen OFF")
-            refreshKeepAliveStatus()
         } catch (t: Throwable) {
             LearningLog.e(TAG, "stopListenService failed", t)
         }
@@ -405,15 +402,14 @@ class MainActivity : AppCompatActivity() {
             val pm = getSystemService(PowerManager::class.java)
             if (pm.isIgnoringBatteryOptimizations(packageName)) {
                 binding.txtStatus.setText(R.string.status_battery_unrestricted)
-                LearningLog.i(TAG, "Battery optimizations already ignored")
                 return
             }
             binding.txtStatus.setText(R.string.status_battery_restricted)
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
-            }
-            startActivity(intent)
-            LearningLog.i(TAG, "Launched ignore battery optimizations")
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+            )
         } catch (t: Throwable) {
             LearningLog.e(TAG, "requestIgnoreBatteryOptimizations failed", t)
         }
@@ -422,13 +418,11 @@ class MainActivity : AppCompatActivity() {
     private fun refreshKeepAliveStatus() {
         val serviceOn = KeepAliveStore.isServiceEnabled(this)
         val listenOn = TelegramConfig.isListenEnabled(this)
-        if (binding.txtStatus.text == getString(R.string.status_idle)) {
-            binding.txtStatus.text = getString(
-                R.string.status_keepalive,
-                if (serviceOn) "ON" else "OFF",
-                if (listenOn) "ON" else "OFF"
-            )
-        }
+        binding.txtStatus.text = getString(
+            R.string.status_keepalive,
+            if (serviceOn) "ON" else "OFF",
+            if (listenOn) "ON" else "OFF"
+        )
     }
 
     companion object {
